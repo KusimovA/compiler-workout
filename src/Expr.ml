@@ -56,7 +56,7 @@ let fromJunction op = fun l r -> boolToInt (op (intToBool l) (intToBool r))
 let signToOp op = match op with
    | "+" -> ( + )
    | "-" -> ( - )
-   | "-" -> ( - )
+   | "*" -> ( * )
    | "/" -> ( / )
    | "%" -> ( mod )
    | ">" -> fromComparison ( > )
