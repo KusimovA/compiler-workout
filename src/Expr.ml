@@ -51,7 +51,7 @@ let boolToInt x = if x then 1 else 0
 
 let fromComparison op = fun l r -> boolToInt (op l r)
 
-let fromJunction op = fun l r -> boolToInt (op (intToBool l) (intToBool r)
+let fromJunction op = fun l r -> boolToInt (op (intToBool l) (intToBool r))
 
 let signToOp op = match op with
    | "+" -> ( + )
@@ -66,7 +66,7 @@ let signToOp op = match op with
    | "==" -> fromComparison ( == )
    | "!=" -> fromComparison ( != )
    | "&&" -> fromJunction ( && )
-   | "!!" -> fromJunction ( !! )
+   | "!!" -> fromJunction ( || )
    | _ -> failwith (Printf.sprintf "Unknown operator %s" op)
    
 (* Expression evaluator
@@ -80,5 +80,5 @@ let signToOp op = match op with
 let rec eval state expr = match expr with
    | Const c -> c
    | Var x -> state x
-   | Binop (sign, l, r) -> signToOp op (eval state l) (eval state r)
+   | Binop (op, l, r) -> signToOp op (eval state l) (eval state r)
         
