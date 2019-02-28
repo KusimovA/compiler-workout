@@ -38,7 +38,7 @@ let rec evalInsn (stack, (state, input, output)) prg = match prg with
 				| _ -> failwith "WRITE. Stack is empty")
 	| LD x -> ((state x)::stack, (state, input, output))
 	| ST x -> (match stack with
-				| z:tail -> (tail, (Expr.update x z state, input, output))
+				| z::tail -> (tail, (Expr.update x z state, input, output))
 				| _ -> failwith "ST. Stack is empty")
 	
 let eval config prg = List.fold_left evalInsn config prg
