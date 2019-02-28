@@ -34,7 +34,7 @@ let rec evalInsn (stack, (state, input, output)) prg = match prg with
 				| z::tail -> (z::stack, (state, tail, output))
 				| _ -> failwith "READ. Input is empty")
 	| WRITE -> (match stack with
-				| z::tail -> (tail, (state, input, output) @ [z]))
+				| z::tail -> (tail, (state, input, output @ [z]))
 				| _ -> failwith "WRITE. Stack is empty")
 	| LD x -> ((state x)::stack, (state, input, output))
 	| ST x -> (match stack with
