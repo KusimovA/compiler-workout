@@ -139,21 +139,21 @@ let rec compileBinop env op =
 
 let compileInstr env inst =
   match inst with
-    | BINOP op -> let x, y, env = env#pop2 in
-                  let st, env   = env#allocate in
-                  env, compileBinop op y x st
-    | CONST n  -> let st, env_ = env#allocate in
-                  env_, [Mov (L n, st)]
-    | READ     -> let st, env_ = env#allocate in
-                  env_, [Call "Lread"; Mov (eax, st)]
-    | WRITE    -> let sv, env_ = env#pop in
-                  env_, [Push sv; Call "Lwrite"; Pop eax]
-    | LD v     -> let st, env_ = env#allocate in
-                  let sv       = env#loc v in
-                  env_, [Mov (M sv, st)]
-    | ST v     -> let svl, env_ = (env#global v)#pop in
-                  let sv        = env#loc v in
-                  env_, [Mov (svl, M sv)]
+    | CONST n  -> let st, newEnv = env#allocate in
+                  newEnv, [Mov (L n, st)]
+    | READ     -> let st, newEnv = env#allocate in
+                  newEnv, [Call "Lread"; Mov (eax, st)]
+    | WRITE    -> let sv, newEnv = env#pop in
+                  newEnv, [Push sv; Call "Lwrite"; Pop eax]
+    | LD v     -> let st, newEnv = env#allocate in
+                  let sv = env#loc v in
+                  newEnv, [Mov (M sv, st)]
+    | ST v     -> let svl, newEnv = (env#global v)#pop in
+                  let sv = env#loc v in
+                  newEnv, [Mov (svl, M sv)]
+	| BINOP op -> let x, y, env = env#pop2 in
+                  let st, env = env#allocate in
+                  env, compileBinop env op 
 	
 let rec compile env prg = match prg with
 	| [] -> env, []
