@@ -136,30 +136,21 @@ let rec compileBinop env op =
 				Mov (eax, space)]
 	| _ -> failwith (Printf.sprintf "Unknown binary op %s" op)								
 	in env, instrList
-
-let compileInstr env inst =
-  match inst with
-    | CONST n  -> let st, newEnv = env#allocate in
-                  newEnv, [Mov (L n, st)]
-    | READ     -> let st, newEnv = env#allocate in
-                  newEnv, [Call "Lread"; Mov (eax, st)]
-    | WRITE    -> let sv, newEnv = env#pop in
-                  newEnv, [Push sv; Call "Lwrite"; Pop eax]
-    | LD v     -> let st, newEnv = env#allocate in
-                  let sv = env#loc v in
-                  newEnv, [Mov (M sv, st)]
-    | ST v     -> let svl, newEnv = (env#global v)#pop in
-                  let sv = env#loc v in
-                  newEnv, [Mov (svl, M sv)]
-	| BINOP op -> let x, y, env = env#pop2 in
-                  let st, env = env#allocate in
-                  env, compileBinop env op 
 	
 let rec compile env prg = match prg with
 	| [] -> env, []
-	| inst::tail -> 
-		let newEnv, instrList = compileInstr env inst in
-		let resultEnv, resultInstList = compile newEnv tail in
+	| inst::rest -> 
+		let newEnv, instrList = (match ins with
+			| CONST n -> let space, newEnv1 = env#allocate in newEnv1, [Mov(L n,space)]
+			| READ -> let space, newEnv1 = env#allocate in newEnv1, [Call "Lread"; Mov(eax,space)]
+			| WRITE -> let space, newEnv1 = env#pop in newEnv1, [Push space; Call "Lwrite"; Pop eax]
+			| LD x -> let space, newEnv1 = (env#global x)#allocate in 
+					  let var = env#loc x in newEnv1, [Mov(M var, space)]
+			| ST x -> let space, newEnv1 = (env#global x)#pop in 
+					  let var = env#loc x in newEnv1, [Mov(space, M var)]
+			| BINOP op -> compile_binop env op
+								) in
+		let resultEnv, resultInstList = compile newEnv rest in
 		resultEnv, instrList @ resultInstList
   
 (* A set of strings *)           
