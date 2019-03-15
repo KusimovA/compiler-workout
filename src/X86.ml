@@ -140,7 +140,7 @@ let rec compileBinop env op =
 let rec compile env prg = match prg with
 	| [] -> env, []
 	| inst::rest -> 
-		let newEnv, instrList = (match ins with
+		let newEnv, instrList = (match inst with
 			| CONST n -> let space, newEnv1 = env#allocate in newEnv1, [Mov(L n,space)]
 			| READ -> let space, newEnv1 = env#allocate in newEnv1, [Call "Lread"; Mov(eax,space)]
 			| WRITE -> let space, newEnv1 = env#pop in newEnv1, [Push space; Call "Lwrite"; Pop eax]
