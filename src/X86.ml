@@ -139,18 +139,18 @@ let rec compileBinop env op =
 	
 let rec compile env prg = match prg with
 	| [] -> env, []
-	| inst::rest -> 
+	| inst::tail -> 
 		let newEnv, instrList = (match inst with
-			| CONST n -> let space, newEnv1 = env#allocate in newEnv1, [Mov(L n,space)]
-			| READ -> let space, newEnv1 = env#allocate in newEnv1, [Call "Lread"; Mov(eax,space)]
+			| CONST n -> let space, newEnv1 = env#allocate in newEnv1, [Mov (L n,space)]
+			| READ -> let space, newEnv1 = env#allocate in newEnv1, [Call "Lread"; Mov (eax,space)]
 			| WRITE -> let space, newEnv1 = env#pop in newEnv1, [Push space; Call "Lwrite"; Pop eax]
 			| LD x -> let space, newEnv1 = (env#global x)#allocate in 
-					  let var = env#loc x in newEnv1, [Mov(M var, space)]
+					  let var = env#loc x in newEnv1, [Mov (M var, space)]
 			| ST x -> let space, newEnv1 = (env#global x)#pop in 
-					  let var = env#loc x in newEnv1, [Mov(space, M var)]
+					  let var = env#loc x in newEnv1, [Mov (space, M var)]
 			| BINOP op -> compileBinop env op
 								) in
-		let resultEnv, resultInstList = compile newEnv rest in
+		let resultEnv, resultInstList = compile newEnv  in
 		resultEnv, instrList @ resultInstList
   
 (* A set of strings *)           
@@ -236,4 +236,4 @@ let build stmt name =
   close_out outf;
   let inc = try Sys.getenv "RC_RUNTIME" with _ -> "../runtime" in
   Sys.command (Printf.sprintf "gcc -m32 -o %s %s/runtime.o %s.s" name inc name)
- 
+ (* Sorry for the fact that travis worked so much *)
