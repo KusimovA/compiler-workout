@@ -89,7 +89,7 @@ let getOperation op = match op with
 	| "!=" -> "ne"
 	| _    -> failwith (Printf.sprintf "Unknown comparison op %s" op)
 
-let rec compileBinop env op: env * instr list =
+let rec compileBinop env op =
 	let zero op = Binop ("^", op, op) in
 	let compare op a b space = [zero eax; Binop("cmp", b, a); 
 								Set (getOperation op, "%al"); 
@@ -155,7 +155,7 @@ let compileInstr env inst =
                   let sv        = env#loc v in
                   env_, [Mov (svl, M sv)]
 	
-let rec compile env prg : env * instr list = match prg with
+let rec compile env prg = match prg with
 	| [] -> env, []
 	| inst::tail -> 
 		let newEnv, instrList = compileInstr env inst in
