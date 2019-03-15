@@ -150,7 +150,7 @@ let rec compile env prg = match prg with
 					  let var = env#loc x in newEnv1, [Mov (space, M var)]
 			| BINOP op -> compileBinop env op
 								) in
-		let resultEnv, resultInstList = compile newEnv  in
+		let resultEnv, resultInstList = compile newEnv tail in
 		resultEnv, instrList @ resultInstList
   
 (* A set of strings *)           
