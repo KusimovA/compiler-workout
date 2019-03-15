@@ -24,7 +24,23 @@ type config = int list * Stmt.config
 
    Takes a configuration and a program, and returns a configuration as a result
 *)                         
-let rec eval conf prog = failwith "Not yet implemented"
+let rec evalInsn (stack, (state, input, output)) prg = match prg with
+	| BINOP op -> (match stack with 
+					| y::x::tail -> ((Expr.signToOp op x y)::tail, (state, input, output))
+					| _ -> failwith "BINOP. Not enough values on the stack")
+	| CONST n -> (n::stack, (state, input, output))
+	| READ -> (match input with
+				| z::tail -> (z::stack, (state, tail, output))
+				| _ -> failwith "READ. Input is empty")
+	| WRITE -> (match stack with
+				| z::tail -> (tail, (state, input, output @ [z]))
+				| _ -> failwith "WRITE. Stack is empty")
+	| LD x -> ((state x)::stack, (state, input, output))
+	| ST x -> (match stack with
+				| z::tail -> (tail, (Expr.update x z state, input, output))
+				| _ -> failwith "ST. Stack is empty")
+	
+let eval config prg = List.fold_left evalInsn config prg
 
 (* Top-level evaluation
 

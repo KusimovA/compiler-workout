@@ -80,8 +80,88 @@ open SM
    Take an environment, a stack machine program, and returns a pair --- the updated environment and the list
    of x86 instructions
 *)
-let compile _ _ = failwith "Not yet implemented"
+let getOperation op = match op with
+	| "<"  -> "l"
+	| "<=" -> "le"
+	| ">"  -> "g"
+	| ">=" -> "ge"
+	| "==" -> "e"
+	| "!=" -> "ne"
+	| _    -> failwith (Printf.sprintf "Unknown comparison op %s" op)
 
+let rec compileBinop env op: env * instr list =
+	let zero op = Binop ("^", op, op) in
+	let compare op a b space = [zero eax; Binop("cmp", b, a); 
+								Set (getOperation op, "%al"); 
+								Mov (eax,space)] in
+	let b,a,env = env#pop2 in
+	let space, env = env#allocate in
+	let instrList = match  op with
+	| "+" | "-" | "*" -> (match (a, b) with
+						|(S _, S _ ) -> [Mov (a, eax);
+										Binop(op, b, eax);
+										Mov (eax, space)]
+						| _ -> if space = a then 
+							[Binop (op, b, a)]
+							else
+							[Binop (op, b, a);
+							Mov (a, space)]
+						)
+	| "/"  ->   [Mov (a, eax); 
+				zero edx; 
+				Cltd; 
+				IDiv b; 
+				Mov (eax, space)]        
+    | "%"  ->   [Mov (a, eax);
+				zero edx;
+				Cltd;
+				IDiv b;
+				Mov (edx, space)]
+	 | "<=" | "<"| ">="| ">" | "==" | "!=" ->   (match (a, b) with
+												|(S _, S _)-> [Mov(a, edx)] @ compare op edx b space 
+												| _ -> compare op a b space
+												)
+	| "!!" ->   [zero eax;
+				Mov (a, edx);
+				Binop ("!!", b, edx);
+				Set ("nz", "%al");
+				Mov (eax, space)]
+    | "&&" ->   [zero eax;
+				zero edx;
+				Binop ("cmp", L 0, a); 
+				Set ("ne", "%al");
+				Binop ("cmp", L 0, b);
+				Set ("ne", "%dl");
+				Binop ("&&", edx, eax);
+				Mov (eax, space)]
+	| _ -> failwith (Printf.sprintf "Unknown binary op %s" op)								
+	in env, instrList
+
+let compileInstr env inst =
+  match inst with
+    | BINOP op -> let x, y, env = env#pop2 in
+                  let st, env   = env#allocate in
+                  env, compileBinop op y x st
+    | CONST n  -> let st, env_ = env#allocate in
+                  env_, [Mov (L n, st)]
+    | READ     -> let st, env_ = env#allocate in
+                  env_, [Call "Lread"; Mov (eax, st)]
+    | WRITE    -> let sv, env_ = env#pop in
+                  env_, [Push sv; Call "Lwrite"; Pop eax]
+    | LD v     -> let st, env_ = env#allocate in
+                  let sv       = env#loc v in
+                  env_, [Mov (M sv, st)]
+    | ST v     -> let svl, env_ = (env#global v)#pop in
+                  let sv        = env#loc v in
+                  env_, [Mov (svl, M sv)]
+	
+let rec compile env prg : env * instr list = match prg with
+	| [] -> env, []
+	| inst::tail -> 
+		let newEnv, instrList = compileInstr env inst in
+		let resultEnv, resultInstList = compile newEnv tail in
+		resultEnv, instrList @ resultInstList
+  
 (* A set of strings *)           
 module S = Set.Make (String)
 
